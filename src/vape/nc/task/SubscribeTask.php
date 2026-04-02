@@ -21,8 +21,8 @@ declare(strict_types=1);
 namespace vape\nc\task;
 
 use pocketmine\scheduler\AsyncTask;
-use Redis;
-use RedisException;
+use Predis\Client;
+use Predis\PredisException;
 use vape\nc\event\NetworkMessageEvent;
 
 class SubscribeTask extends AsyncTask {
@@ -38,21 +38,39 @@ class SubscribeTask extends AsyncTask {
     ) {}
 
     public function onRun() : void {
-        $redis = new Redis();
+        if (!class_exists(Client::class)) {
+            require_once dirname(__DIR__) . '/predis/Autoloader.php';
+            \Predis\Autoloader::register();
+        }
+
+        // We explicitly disable read_write_timeout to prevent the subscriber loop from crashing during inactivity
+        $parameters = [
+            'scheme' => 'tcp',
+            'host'   => $this->host,
+            'port'   => $this->port,
+            'persistent' => 'subscriber_worker_tunnel',
+            'read_write_timeout' => 0
+        ];
+
+        if ($this->password !== '') {
+            $parameters['password'] = $this->password;
+        }
 
         try {
-            $redis->pconnect($this->host, $this->port, 0.0, 'subscriber_worker');
-            $redis->setOption(Redis::OPT_READ_TIMEOUT, -1);
+            $redis = new Client($parameters);
+            $pubsub = $redis->pubSubLoop();
             
-            if ($this->password !== '') {
-                $redis->auth($this->password);
+            // Register channels locally within the Predis consumer
+            $pubsub->subscribe($this->channels);
+
+            foreach ($pubsub as $message) {
+                if ($message->kind === 'message') {
+                    $this->publishProgress([$message->channel, $message->payload]);
+                }
             }
 
-            $redis->subscribe($this->channels, function(Redis $instance, string $channel, string $message) : void {
-                $this->publishProgress([$channel, $message]);
-            });
-
-        } catch (RedisException $e) {
+        } catch (PredisException $e) {
+            // Subscription loop exited. Connection dropped.
         }
     }
 
