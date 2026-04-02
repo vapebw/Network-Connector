@@ -11,9 +11,7 @@
  * (c) 2026 vape
  *
  * This program is free software: you can use it and/or modify
- * it under the terms of the MIT License (Modified).
- *
- * You are NOT allowed to RESELL this software.
+ * it under the terms of the MIT License.
  *
  * @author vape
  */
