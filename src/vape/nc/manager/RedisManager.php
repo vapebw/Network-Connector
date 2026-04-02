@@ -9,10 +9,6 @@
  *      \/ /_/   \_\|_|     |______|
  *
  * (c) 2026 vape
- *
- * This program is free software: you can use it and/or modify
- * it under the terms of the MIT License.
- *
  * @author vape
  */
 
@@ -24,11 +20,8 @@ use pocketmine\plugin\PluginBase;
 use vape\nc\task\ConnectTask;
 use vape\nc\task\PublishTask;
 use vape\nc\task\SubscribeTask;
+use vape\nc\utils\NCPayload;
 
-/**
- * Singleton Manager for the Redis connection.
- * All traffic goes through here to avoid blocking the Main Thread.
- */
 class RedisManager {
 
     private static ?self $instance = null;
@@ -37,17 +30,19 @@ class RedisManager {
     private string $host;
     private int $port;
     private string $password;
+    private string $serverId;
 
-    private function __construct(PluginBase $plugin, string $host, int $port, string $password = '') {
+    private function __construct(PluginBase $plugin, string $host, int $port, string $password = '', string $serverId = 'unknown') {
         $this->plugin = $plugin;
         $this->host = $host;
         $this->port = $port;
         $this->password = $password;
+        $this->serverId = $serverId;
     }
 
-    public static function init(PluginBase $plugin, string $host, int $port, string $password = '') : void {
+    public static function init(PluginBase $plugin, string $host, int $port, string $password = '', string $serverId = 'unknown') : void {
         if (self::$instance === null) {
-            self::$instance = new self($plugin, $host, $port, $password);
+            self::$instance = new self($plugin, $host, $port, $password, $serverId);
         }
     }
 
@@ -58,44 +53,40 @@ class RedisManager {
         return self::$instance;
     }
 
-    /**
-     * Generic dispatcher for our Async tasks.
-     */
+    public function getServerId() : string {
+        return $this->serverId;
+    }
+
     private function dispatchQuery(int $operation, string $key, string $value, ?callable $onComplete = null) : void {
         $task = new ConnectTask($this->host, $this->port, $this->password, $operation, $key, $value);
         
         if ($onComplete !== null) {
-            // Store the closure in the Main Thread scope.
             $task->storeLocal('callback', $onComplete);
         }
 
         $this->plugin->getServer()->getAsyncPool()->submitTask($task);
     }
 
-    /**
-     * Saves a value in Redis asynchronously.
-     */
     public function set(string $key, string $value) : void {
         $this->dispatchQuery(ConnectTask::OP_SET, $key, $value);
     }
 
-    /**
-     * Gets a value from Redis and executes the closure on the main thread when its done.
-     */
     public function get(string $key, callable $onComplete) : void {
         $this->dispatchQuery(ConnectTask::OP_GET, $key, '', $onComplete);
     }
 
-    /**
-     * Manual hard-ping. Used by the Heartbeat Task.
-     */
     public function ping(callable $onComplete) : void {
         $this->dispatchQuery(ConnectTask::OP_PING, '', '', $onComplete);
     }
 
-    public function publish(string $channel, string $message) : void {
+    public function publish(string $channel, string|array $message) : void {
         $task = new PublishTask($this->host, $this->port, $this->password, $channel, $message);
         $this->plugin->getServer()->getAsyncPool()->submitTask($task);
+    }
+
+    public function broadcast(string $channel, array $data) : void {
+        $payload = new NCPayload($this->serverId, $data, time());
+        $this->publish($channel, $payload->jsonSerialize());
     }
 
     public function subscribe(array $channels) : void {

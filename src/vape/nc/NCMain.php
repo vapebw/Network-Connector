@@ -9,10 +9,6 @@
  *      \/ /_/   \_\|_|     |______|
  *
  * (c) 2026 vape
- *
- * This program is free software: you can use it and/or modify
- * it under the terms of the MIT License.
- *
  * @author vape
  */
 
@@ -23,6 +19,7 @@ namespace vape\nc;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
 use vape\nc\manager\RedisManager;
+use vape\nc\task\HeartbeatTask;
 
 class NCMain extends PluginBase {
 
@@ -38,8 +35,15 @@ class NCMain extends PluginBase {
             \Predis\Autoloader::register();
         }
 
-        // TODO: Move credentials to a config.yml in future phases
-        RedisManager::init($this, '127.0.0.1', 6379, '');
+        $this->saveDefaultConfig();
+        $config = $this->getConfig();
+
+        $host = $config->getNested('redis.host', '127.0.0.1');
+        $port = (int) $config->getNested('redis.port', 6379);
+        $password = (string) $config->getNested('redis.password', '');
+        $serverId = (string) $config->get('server-id', 'lobby-1');
+
+        RedisManager::init($this, $host, $port, $password, $serverId);
 
         $this->getScheduler()->scheduleRepeatingTask(new ClosureTask(function() : void {
             RedisManager::getInstance()->ping(function(bool $isAlive) : void {
@@ -47,7 +51,9 @@ class NCMain extends PluginBase {
                     $this->getLogger()->warning("§c[NC] Redis connection lost! phpredis will try to revive it, but keep an eye on your instance...");
                 }
             });
-        }), 20 * 5);
+        }), 100);
+
+        $this->getScheduler()->scheduleRepeatingTask(new HeartbeatTask(), 300);
 
         $this->getLogger()->info("§b  __      __  _     _____   ______ ");
         $this->getLogger()->info("§b  \ \    / / / \   |  __ \ |  ____|");
@@ -57,7 +63,7 @@ class NCMain extends PluginBase {
         $this->getLogger()->info("§b      \/ /_/   \_\|_|     |______|");
         $this->getLogger()->info("§7     (c) 2026 vape | MIT License");
         
-        $this->getLogger()->info("§b[NC] Network Connector v0.0.1 enabled! Redis is warming up.");
+        $this->getLogger()->info("§b[NC] Network Connector v0.0.3 enabled! Redis is warming up.");
     }
 
     public static function getInstance() : self {
