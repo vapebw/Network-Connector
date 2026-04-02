@@ -21,12 +21,9 @@ declare(strict_types=1);
 namespace vape\nc\task;
 
 use pocketmine\scheduler\AsyncTask;
-use Redis;
-use RedisException;
+use Predis\Client;
+use Predis\PredisException;
 
-/**
- * Our loyal slave that handles the dirty I/O work in the Worker Threads.
- */
 class ConnectTask extends AsyncTask {
 
     public const OP_SET = 0;
@@ -52,15 +49,24 @@ class ConnectTask extends AsyncTask {
     }
 
     public function onRun() : void {
-        $redis = new Redis();
+        if (!class_exists(Client::class)) {
+            require_once dirname(__DIR__) . '/predis/Autoloader.php';
+            \Predis\Autoloader::register();
+        }
+
+        $parameters = [
+            'scheme' => 'tcp',
+            'host'   => $this->host,
+            'port'   => $this->port,
+            'persistent' => true
+        ];
+
+        if ($this->password !== '') {
+            $parameters['password'] = $this->password;
+        }
 
         try {
-            // pconnect securely reuses connections per worker to avoid high connection overhead.
-            $redis->pconnect($this->host, $this->port, 2.5);
-            
-            if ($this->password !== '') {
-                $redis->auth($this->password);
-            }
+            $redis = new Client($parameters);
 
             switch ($this->operation) {
                 case self::OP_SET:
@@ -70,16 +76,18 @@ class ConnectTask extends AsyncTask {
 
                 case self::OP_GET:
                     $result = $redis->get($this->queryKey);
-                    $this->setResult($result === false ? null : (string) $result);
+                    $this->setResult($result === null ? null : (string) $result);
                     break;
 
                 case self::OP_PING:
                     $ping = $redis->ping();
-                    $this->setResult((bool) $ping);
+                    // Predis returns a Status object (e.g. +PONG) for ping, or a string depending on version
+                    $isAlive = $ping instanceof \Predis\Response\Status ? $ping->getPayload() === 'PONG' : (bool) $ping;
+                    $this->setResult($isAlive);
                     break;
             }
 
-        } catch (RedisException $e) {
+        } catch (PredisException $e) {
             $this->setResult(new \Exception($e->getMessage()));
         }
     }
