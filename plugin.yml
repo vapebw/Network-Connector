@@ -1,5 +1,5 @@
 name: NetworkConnector
-version: 0.0.1
+version: 0.0.2
 main: vape\nc\NCMain
 api: 5.0.0
 author: vape (@sxvape)
