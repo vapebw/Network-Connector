@@ -22,6 +22,8 @@ namespace vape\nc\manager;
 
 use pocketmine\plugin\PluginBase;
 use vape\nc\task\ConnectTask;
+use vape\nc\task\PublishTask;
+use vape\nc\task\SubscribeTask;
 
 /**
  * Singleton Manager for the Redis connection.
@@ -91,5 +93,13 @@ class RedisManager {
         $this->dispatchQuery(ConnectTask::OP_PING, '', '', $onComplete);
     }
 
-    // TODO: Implement Pub/Sub in v0.0.2
+    public function publish(string $channel, string $message) : void {
+        $task = new PublishTask($this->host, $this->port, $this->password, $channel, $message);
+        $this->plugin->getServer()->getAsyncPool()->submitTask($task);
+    }
+
+    public function subscribe(array $channels) : void {
+        $task = new SubscribeTask($this->host, $this->port, $this->password, $channels);
+        $this->plugin->getServer()->getAsyncPool()->submitTask($task);
+    }
 }
