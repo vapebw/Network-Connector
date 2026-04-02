@@ -9,10 +9,6 @@
  *      \/ /_/   \_\|_|     |______|
  *
  * (c) 2026 vape
- *
- * This program is free software: you can use it and/or modify
- * it under the terms of the MIT License.
- *
  * @author vape
  */
 
@@ -31,7 +27,7 @@ class PublishTask extends AsyncTask {
         private int $port,
         private string $password,
         private string $channel,
-        private string $queryMessage
+        private string|array $queryMessage
     ) {}
 
     public function onRun() : void {
@@ -53,9 +49,9 @@ class PublishTask extends AsyncTask {
 
         try {
             $redis = new Client($parameters);
-            $redis->publish($this->channel, $this->queryMessage);
-        } catch (PredisException $e) {
-            // Silently fail if connection drops during broadcast
+            $message = is_array($this->queryMessage) ? json_encode($this->queryMessage, JSON_THROW_ON_ERROR) : $this->queryMessage;
+            $redis->publish($this->channel, $message);
+        } catch (\Exception) {
         }
     }
 }
