@@ -11,9 +11,7 @@
  * (c) 2026 vape
  *
  * This program is free software: you can use it and/or modify
- * it under the terms of the MIT License (Modified).
- *
- * You are NOT allowed to RESELL this software.
+ * it under the terms of the MIT License.
  *
  * @author vape
  */
@@ -52,8 +50,7 @@ class NCMain extends PluginBase {
         $this->getLogger()->info("§b    \ \/ / / _  \ |  ___/ |  __|  ");
         $this->getLogger()->info("§b     \  / / ___  \| |     | |____ ");
         $this->getLogger()->info("§b      \/ /_/   \_\|_|     |______|");
-        $this->getLogger()->info("§7     (c) 2026 vape | MIT License (Modified)");
-        $this->getLogger()->info("§7     Resale is strictly prohibited.");
+        $this->getLogger()->info("§7     (c) 2026 vape | MIT License");
         
         $this->getLogger()->info("§b[NC] Network Connector v0.0.1 enabled! Redis is warming up.");
     }
