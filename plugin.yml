@@ -1,0 +1,6 @@
+name: NetworkConnector
+version: 0.0.1
+main: vape\nc\NCMain
+api: 5.0.0
+author: vape (@sxvape)
+description: "Asynchronous Redis Connector library"
