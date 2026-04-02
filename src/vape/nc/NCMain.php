@@ -33,6 +33,11 @@ class NCMain extends PluginBase {
     }
 
     protected function onEnable() : void {
+        if (!class_exists(\Predis\Client::class)) {
+            require_once __DIR__ . '/predis/Autoloader.php';
+            \Predis\Autoloader::register();
+        }
+
         // TODO: Move credentials to a config.yml in future phases
         RedisManager::init($this, '127.0.0.1', 6379, '');
 
