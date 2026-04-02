@@ -1,0 +1,5 @@
+name: NetworkConnector
+version: 0.0.3
+api: 5.0.0
+author: vape (@sxvape)
+description: "High-performance Asynchronous Redis Connector library for PocketMine-MP 5"
