@@ -21,8 +21,8 @@ declare(strict_types=1);
 namespace vape\nc\task;
 
 use pocketmine\scheduler\AsyncTask;
-use Redis;
-use RedisException;
+use Predis\Client;
+use Predis\PredisException;
 
 class PublishTask extends AsyncTask {
 
@@ -35,18 +35,27 @@ class PublishTask extends AsyncTask {
     ) {}
 
     public function onRun() : void {
-        $redis = new Redis();
+        if (!class_exists(Client::class)) {
+            require_once dirname(__DIR__) . '/predis/Autoloader.php';
+            \Predis\Autoloader::register();
+        }
+
+        $parameters = [
+            'scheme' => 'tcp',
+            'host'   => $this->host,
+            'port'   => $this->port,
+            'persistent' => true
+        ];
+
+        if ($this->password !== '') {
+            $parameters['password'] = $this->password;
+        }
 
         try {
-            $redis->pconnect($this->host, $this->port, 2.5);
-            
-            if ($this->password !== '') {
-                $redis->auth($this->password);
-            }
-
+            $redis = new Client($parameters);
             $redis->publish($this->channel, $this->queryMessage);
-
-        } catch (RedisException $e) {
+        } catch (PredisException $e) {
+            // Silently fail if connection drops during broadcast
         }
     }
 }
