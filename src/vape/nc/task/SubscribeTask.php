@@ -43,7 +43,6 @@ class SubscribeTask extends AsyncTask {
             \Predis\Autoloader::register();
         }
 
-        // We explicitly disable read_write_timeout to prevent the subscriber loop from crashing during inactivity
         $parameters = [
             'scheme' => 'tcp',
             'host'   => $this->host,
@@ -60,7 +59,6 @@ class SubscribeTask extends AsyncTask {
             $redis = new Client($parameters);
             $pubsub = $redis->pubSubLoop();
             
-            // Register channels locally within the Predis consumer
             $pubsub->subscribe($this->channels);
 
             foreach ($pubsub as $message) {
@@ -70,7 +68,6 @@ class SubscribeTask extends AsyncTask {
             }
 
         } catch (PredisException $e) {
-            // Subscription loop exited. Connection dropped.
         }
     }
 

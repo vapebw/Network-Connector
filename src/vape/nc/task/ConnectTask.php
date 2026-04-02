@@ -81,7 +81,7 @@ class ConnectTask extends AsyncTask {
 
                 case self::OP_PING:
                     $ping = $redis->ping();
-                    // Predis returns a Status object (e.g. +PONG) for ping, or a string depending on version
+                    // Predis returns a Status object (e.g. +PONG) for ping, or a string depending on version (i think)
                     $isAlive = $ping instanceof \Predis\Response\Status ? $ping->getPayload() === 'PONG' : (bool) $ping;
                     $this->setResult($isAlive);
                     break;
