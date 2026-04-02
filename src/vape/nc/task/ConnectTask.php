@@ -9,10 +9,6 @@
  *      \/ /_/   \_\|_|     |______|
  *
  * (c) 2026 vape
- *
- * This program is free software: you can use it and/or modify
- * it under the terms of the MIT License.
- *
  * @author vape
  */
 
@@ -81,7 +77,6 @@ class ConnectTask extends AsyncTask {
 
                 case self::OP_PING:
                     $ping = $redis->ping();
-                    // Predis returns a Status object (e.g. +PONG) for ping, or a string depending on version (i think)
                     $isAlive = $ping instanceof \Predis\Response\Status ? $ping->getPayload() === 'PONG' : (bool) $ping;
                     $this->setResult($isAlive);
                     break;
@@ -93,7 +88,6 @@ class ConnectTask extends AsyncTask {
     }
 
     public function onCompletion() : void {
-        /** @var callable|null $callback */
         $callback = $this->fetchLocal('callback');
         
         if ($callback === null) {

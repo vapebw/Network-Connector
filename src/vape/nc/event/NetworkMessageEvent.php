@@ -9,10 +9,6 @@
  *      \/ /_/   \_\|_|     |______|
  *
  * (c) 2026 vape
- *
- * This program is free software: you can use it and/or modify
- * it under the terms of the MIT License.
- *
  * @author vape
  */
 
@@ -24,10 +20,19 @@ use pocketmine\event\Event;
 
 class NetworkMessageEvent extends Event {
 
+    private string $origin = 'unknown';
+    private array $data = [];
+
     public function __construct(
         private string $channel,
         private string $message
-    ) {}
+    ) {
+        $decoded = json_decode($message, true);
+        if (is_array($decoded)) {
+            $this->origin = $decoded['origin'] ?? 'unknown';
+            $this->data = $decoded['data'] ?? [];
+        }
+    }
 
     public function getChannel() : string {
         return $this->channel;
@@ -35,5 +40,13 @@ class NetworkMessageEvent extends Event {
 
     public function getMessage() : string {
         return $this->message;
+    }
+
+    public function getOrigin() : string {
+        return $this->origin;
+    }
+
+    public function getData() : array {
+        return $this->data;
     }
 }
