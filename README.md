@@ -4,11 +4,11 @@
 > **This project is currently under active development and is NOT stable.**  
 > Features may not work as expected and the API is subject to change. Use at your own risk.
 
-**Network Connector** is a high-performance, non-blocking Redis library for PocketMine-MP 5 (PHP 8.2+). It utilizes the `phpredis` extension to provide stable, asynchronous communication between the Minecraft server and a Redis instance, preventing TPS drops during heavy I/O operations.
+**Network Connector** is a high-performance, non-blocking Redis library for PocketMine-MP 5 (PHP 8.2+). It utilizes the pure PHP `Predis` library to provide stable, asynchronous communication between the Minecraft server and a Redis instance, preventing TPS drops during heavy I/O operations without depending on external binaries.
 
 ## Features (v0.0.2)
-- **Asynchronous Engine**: Powered by `AsyncTask` and `phpredis` for maximum throughput.
-- **Persistent Connections**: Uses `pconnect` to reuse connections across worker threads, minimizing handshake overhead.
+- **Asynchronous Engine**: Powered by `AsyncTask` and `Predis` for maximum throughput.
+- **Persistent Connections**: Uses persistent connections in the Predis configuration to reuse tcp streams across worker threads.
 - **Unified Manager**: Singleton `RedisManager` for easy integration and thread-safe callback handling.
 - **Heartbeat System**: Automatic monitoring of the Redis connection status.
 - **Pub/Sub (WIP)**: Listen and publish to isolated messaging channels asynchronously globally.
